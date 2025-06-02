@@ -6,7 +6,7 @@ This project implements a blockchain auction system for a painting represented a
 
 - Solidity (Smart Contract)
 - Hardhat (Development Environment)
-- Ethereum Goerli Testnet
+- Ethereum Sepolia Testnet
 
 ## Setup
 
