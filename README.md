@@ -26,6 +26,8 @@ We are building an auction system where each painting is represented as an NFT a
 
 The backend architecture follows an event-driven, scalable design with the following components:
 
+![image](https://github.com/user-attachments/assets/4b7d2fe3-6a61-4db9-be9d-2b55cfe611fd)
+
 ### 1. API Services
 The API layer is responsible for exposing endpoints to:
 - Create and manage auctions.
