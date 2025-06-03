@@ -11,7 +11,8 @@ const auctionSchema = new Schema(
         address: { type: String, required: true },
         ipfsUrl: { type: String, required: true },
         winnerAddress: { type: String },
-        mintTxHash: { type: String }
+        mintTxHash: { type: String },
+        status: { type: String, default: 'active' }, // 'active' | 'ended' | 'minted'
     },
     {
         timestamps: true,

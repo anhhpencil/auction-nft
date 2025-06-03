@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract PaintingAuction is ERC721URIStorage, ReentrancyGuard {
+    address public owner;
+
     uint public endTime;
     address public winner;
     bool public auctionEnded;
@@ -14,6 +16,7 @@ contract PaintingAuction is ERC721URIStorage, ReentrancyGuard {
 
     mapping(address => uint) public bids;
     address[] private bidders;
+    mapping(address => bool) public refunded;
 
     event BidPlaced(address indexed bidder, uint amount);
     event AuctionEnded(address winner, uint amount);
@@ -26,6 +29,12 @@ contract PaintingAuction is ERC721URIStorage, ReentrancyGuard {
         uint _durationInSeconds
     ) ERC721(name, symbol) {
         endTime = block.timestamp + _durationInSeconds;
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner");
+        _;
     }
 
     modifier onlyBeforeEnd() {
@@ -71,25 +80,55 @@ contract PaintingAuction is ERC721URIStorage, ReentrancyGuard {
         emit AuctionEnded(winner, highestBid);
     }
 
-    function mintNFT(string memory tokenURI) public onlyAfterEnd nonReentrant {
-        require(msg.sender == winner, "Only winner can mint");
+    function mintNFT(
+        string memory tokenURI,
+        address toAddress
+    ) public onlyAfterEnd onlyOwner nonReentrant {
+        require(toAddress == winner, "Only winner can mint");
         require(!nftMinted, "Already minted");
 
         tokenId++;
-        _mint(msg.sender, tokenId);
+        _mint(toAddress, tokenId);
         _setTokenURI(tokenId, tokenURI);
 
         nftMinted = true;
-        emit NFTMinted(msg.sender, tokenId);
+        emit NFTMinted(toAddress, tokenId);
     }
 
-    function withdraw() public onlyAfterEnd nonReentrant {
-        require(msg.sender != winner, "Winner cannot withdraw");
-        uint amount = bids[msg.sender];
-        require(amount > 0, "Nothing to withdraw");
-        bids[msg.sender] = 0;
-        payable(msg.sender).transfer(amount);
-        emit FundsWithdrawn(msg.sender, amount);
+    // function withdraw() public onlyAfterEnd nonReentrant {
+    //     require(msg.sender != winner, "Winner cannot withdraw");
+    //     uint amount = bids[msg.sender];
+    //     require(amount > 0, "Nothing to withdraw");
+    //     bids[msg.sender] = 0;
+    //     payable(msg.sender).transfer(amount);
+    //     emit FundsWithdrawn(msg.sender, amount);
+    // }
+
+    function refundBatch(
+        uint offset,
+        uint limit
+    ) public onlyOwner onlyAfterEnd nonReentrant {
+        require(auctionEnded, "Auction not ended");
+        uint count = 0;
+
+        for (uint i = offset; i < bidders.length && count < limit; i++) {
+            address bidder = bidders[i];
+
+            // Skip winner and already refunded
+            if (bidder == winner || refunded[bidder]) {
+                continue;
+            }
+
+            uint amount = bids[bidder];
+            if (amount > 0) {
+                refunded[bidder] = true;
+                bids[bidder] = 0;
+                payable(bidder).transfer(amount);
+                emit FundsWithdrawn(bidder, amount);
+            }
+
+            count++;
+        }
     }
 
     // Optional: to get all bidders (not gas-efficient)

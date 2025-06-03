@@ -9,6 +9,16 @@ const envVarsSchema = Joi.object()
     .keys({
         PORT: Joi.number().required(),
         MONGODB_URL: Joi.string().required().description('Mongo DB url'),
+
+        RPC_URL: Joi.string().required(),
+        ADMIN_PRIVATE_KEY: Joi.string().required(),
+
+        PINATA_API_KEY: Joi.string().required(),
+        PINATA_API_SECRET: Joi.string().required(),
+        PINATA_API_URL: Joi.string().required(),
+        PINATA_GATEWAY: Joi.string().required(),
+
+        RABBITMQ_URL: Joi.string().required(),
     })
     .unknown();
 
@@ -26,4 +36,19 @@ module.exports = {
         options: {},
     },
 
+    blockchain: {
+        rpcUrl: envVars.RPC_URL,
+        adminKey: envVars.ADMIN_PRIVATE_KEY
+    },
+
+    pinata: {
+        apiKey: envVars.PINATA_API_KEY,
+        apisecret: envVars.PINATA_API_SECRET,
+        url: envVars.PINATA_API_URL,
+        gateway: envVars.PINATA_GATEWAY
+    },
+
+    rabbitMq: {
+        url: envVars.RABBITMQ_URL,
+    }
 };

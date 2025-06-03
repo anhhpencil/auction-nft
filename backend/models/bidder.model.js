@@ -10,6 +10,8 @@ const bidderSchema = new Schema(
         amountBid: { type: Number, required: true, default: 0 },
         address: { type: String, required: true },
         auctionId: { type: String, required: true },
+        isRefunded: { type: Boolean, default: false },
+        isWinner: { type: Boolean, default: false },
     },
     {
         timestamps: true,

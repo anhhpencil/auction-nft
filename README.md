@@ -2,10 +2,6 @@
 
 We are building an auction system where each painting is represented as an NFT and auctioned on the Ethereum blockchain.
 
-# Painting Represented as an NFT 
-
-We are building an auction system where each painting is represented as an NFT and auctioned on the Ethereum blockchain.
-
 ## Technologies Used
 
 ### Smart Contracts
@@ -48,4 +44,54 @@ Workers consume messages from RabbitMQ and handle heavy-lifting tasks like:
 
 ### 5. Database (MongoDB)
 MongoDB is used to persist auction metadata, user bids. It acts as the central data source for both the API and internal services.
+
+
+## Backend's layout code
+backend/
+├── config/                 # Configs: env vars, constants, internal logic configs
+│   ├── config.js
+│   └── internal-code.js
+│
+├── contracts/              # ABI, contract addresses, compiled artifacts
+│   └── PaintingAuction.json
+│
+├── controllers/           # Handle incoming requests & delegate to services
+│   ├── auction.controller.js
+│   ├── bidder.controller.js
+│   └── index.js
+│
+├── events/                # Web3 event listeners
+│   └── eventListener.js
+│
+├── jobs/                  # Cron jobs, scheduled or long-running tasks
+│   └── handleAuction.js
+│
+├── middlewares/           # Express middlewares: auth, error handling, logging
+│   └── ...
+│
+├── models/                # Database models
+│   └── ...
+│
+├── routes/                # Define API routes & attach controllers
+│   └── ...
+│
+├── services/              # Business logic, interact with blockchain/db/api
+│   ├── auction.service.js
+│   ├── bidder.service.js
+│   ├── blockchain.service.js
+│   ├── image.service.js
+│   ├── ipfs.service.js
+│   └── index.js
+│
+├── utils/                 # Helper functions/utilities (e.g., formatters, error handlers)
+│   └── ...
+│
+├── validation/            # Joi schemas for request data validation
+│   └── ...
+│
+├── workers/               # Background workers, queues (e.g., Bull, RabbitMQ)
+│   └── index.js
+│
+└── index.js               # Entry point (e.g., Express/Koa app setup)
+
 
