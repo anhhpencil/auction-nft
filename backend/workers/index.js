@@ -1,10 +1,13 @@
-const amqp = require('amqplib');
 const path = require('path');
+const mongoose = require('mongoose');
+const { ethers } = require('ethers');
+
 const { v4: uuidv4 } = require('uuid');
 const { Auction, Bidder } = require('../models');
 const { ipfsService, imageService, blockchainService } = require('../services');
 
-const { rabbitMq } = require('../config/config');
+const { connectRabbitMQ } = require('../libs/rabbitmq');
+const { mongoose: mongooseCfg } = require('../config/config');
 
 
 let bidBuffer = [];
@@ -19,13 +22,15 @@ const flushBidBuffer = async () => {
     for (const { contractAddress, bidder, amount } of bidBuffer) {
         const auction = await Auction.findOne({ address: contractAddress });
         if (!auction) continue;
+        const amountInEther = ethers.formatEther(amount);
 
         const existing = await Bidder.findOne({ address: bidder, auctionId: auction.id });
         if (existing) {
+
             bulkOps.push({
                 updateOne: {
                     filter: { id: existing.id },
-                    update: { $inc: { amountBid: Number(amount) } }
+                    update: { $inc: { amountBid: Number(amountInEther) } }
                 }
             });
         } else {
@@ -33,7 +38,7 @@ const flushBidBuffer = async () => {
                 insertOne: {
                     document: {
                         id: uuidv4(),
-                        amountBid: Number(amount),
+                        amountBid: Number(amountInEther),
                         address: bidder,
                         auctionId: auction.id,
                         isRefuned: false,
@@ -78,7 +83,10 @@ const flushWithdrawBuffer = async () => {
 };
 
 (async () => {
-    const conn = await amqp.connect(rabbitMq.url);
+    await mongoose.connect(mongooseCfg.url, {
+    });
+
+    const conn = await connectRabbitMQ();
     const channel = await conn.createChannel();
 
     await channel.assertQueue('bid-events');
@@ -86,7 +94,6 @@ const flushWithdrawBuffer = async () => {
     await channel.assertQueue('withdrawn-events');
     await channel.assertQueue('auction-ended');
     await channel.assertQueue('refund-batch');
-    await channel.assertQueue('refunded-events');
 
     channel.consume('bid-events', async (msg) => {
         const data = JSON.parse(msg.content.toString());
@@ -115,7 +122,9 @@ const flushWithdrawBuffer = async () => {
     });
 
     channel.consume('auction-ended', async (msg) => {
-        const { contractAddress, winner: winnerAddress, winnerName } = JSON.parse(msg.content.toString());
+        const { contractAddress, winner: winnerAddress } = JSON.parse(msg.content.toString());
+        channel.ack(msg);
+
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -152,20 +161,22 @@ const flushWithdrawBuffer = async () => {
 
             if (!result?.length || result[0].bidder.length === 0) {
                 console.log("Auction or winner not found.");
-                channel.ack(msg);
                 return;
             }
             const auction = result[0];
-            const tokenURI = auction.ipfsUrl;
+            const tokenURI = 'https://stevedsimkins.mypinata.cloud/ipfs/QmfKsRfqkWYuShSMDghMpLt8SQnWyPhDaEe8JUauM8E7Uz'; // hardcode for the image
 
             // 2. Mint NFT
             const txHash = await blockchainService.mintNFT(auction.address, winnerAddress, tokenURI);
 
             // 3. Generate image and upload to IPFS
-            const outputPath = path.join(__dirname, `../../tmp/${auction._id}.jpg`);
-            await imageService.generateAnnotatedImage('base.jpg', outputPath, winnerAddress, txHash);
+            const outputPath = path.join(__dirname, `../anotation/${auction._id}.jpg`);
+
+            await imageService.generateAnnotatedImage(path.join(__dirname, `../anotation/base.jpg`), outputPath, 'WINNER', txHash);
+
             const ipfsUrl = await ipfsService.uploadToPinata(outputPath);
 
+            console.log(`Mint NFT to winner: ${ipfsUrl}`)
             // 4. Update auction
             await Auction.updateOne(
                 { id: auction.id },
@@ -188,7 +199,6 @@ const flushWithdrawBuffer = async () => {
             );
 
             await session.commitTransaction();
-            channel.ack(msg);
 
 
             channel.sendToQueue('refund-batch', Buffer.from(JSON.stringify({
@@ -203,19 +213,6 @@ const flushWithdrawBuffer = async () => {
             channel.nack(msg);
         } finally {
             session.endSession();
-        }
-    });
-
-    channel.consume('refunded-events', async (msg) => {
-        const data = JSON.parse(msg.content.toString());
-        bidBuffer.push(data);
-        channel.ack(msg);
-
-        if (!flushTimeout) {
-            flushTimeout = setTimeout(async () => {
-                await flushBidBuffer();
-                flushTimeout = null;
-            }, 500);
         }
     });
 

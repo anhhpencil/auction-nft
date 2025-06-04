@@ -1,0 +1,1 @@
+module.exports.auctionValidation = require('./auction.validation')

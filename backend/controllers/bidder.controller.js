@@ -7,7 +7,7 @@ const { bidderService } = require('../services')
  */
 const getAuctionHistory = catchAsync(async (req, res) => {
 
-    const { bidderAddress } = req.user
+    const { bidderAddress } = req.user // This one need get from JWT token, will improve in next version
     const { auctionId, page = 1, limit = 1 } = req.query;
 
     const filter = { address: bidderAddress };

@@ -23,3 +23,4 @@ const uploadToPinata = async (filePath) => {
 
 
 module.exports = { uploadToPinata }
+

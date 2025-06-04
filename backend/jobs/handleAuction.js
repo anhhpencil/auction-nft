@@ -1,18 +1,13 @@
-const mongoose = require('mongoose');
 const { Auction } = require('../models');
 const { blockchainService } = require('../services');
 
-
 const handleAuctionConclusion = async (auction) => {
+
     try {
         await blockchainService.endAuction(auction.address);
-
-        console.log(`✔ Auction ${auction.id} concluded. Winner: ${winnerAddress}`);
+        await Auction.findOneAndUpdate({ address: auction.address }, { $set: { status: "ended" } });
     } catch (err) {
-        await session.abortTransaction();
         console.error(`❌ Failed to conclude auction ${auction.id}:`, err);
-    } finally {
-        session.endSession();
     }
 };
 const endAuctionJob = async () => {

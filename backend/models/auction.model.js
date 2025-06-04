@@ -9,7 +9,7 @@ const auctionSchema = new Schema(
         id: { type: String, required: true, unique: true, default: uuidv4 },
         endsAt: { type: Date, required: true },
         address: { type: String, required: true },
-        ipfsUrl: { type: String, required: true },
+        ipfsUrl: { type: String },
         winnerAddress: { type: String },
         mintTxHash: { type: String },
         status: { type: String, default: 'active' }, // 'active' | 'ended' | 'minted'

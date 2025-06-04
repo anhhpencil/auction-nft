@@ -6,12 +6,10 @@ const { auctionService } = require('../services')
  * By calling to blockchain
  */
 const createAuction = catchAsync(async (req, res) => {
+    const { durationInSeconds, name, symbol } = req.body;
+    const auction = await auctionService.createAuction(durationInSeconds, name, symbol);
 
-    const { ipfsUrl, durationInSeconds, name, symbol } = req.body;
-
-    await auctionService.createAuction(ipfsUrl, durationInSeconds, name, symbol);
-
-    res.send({});
+    res.send(auction);
 });
 
 /**
@@ -51,7 +49,7 @@ const getBidders = catchAsync(async (req, res) => {
 
     const options = {
         sortBy: 'createdAt:desc', // sort order
-        limit: Math.min(1, limit), // maximum results per page
+        limit: Math.min(10, limit), // maximum results per page
         page, // page number
     };
 

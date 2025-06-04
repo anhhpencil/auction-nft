@@ -5,16 +5,17 @@ const { Auction, Bidder } = require('../models');
 
 const blockchainService = require('./blockchain.service');
 
-const createAuction = async (ipfsUrl, durationInSeconds, name, symbol) => {
+const createAuction = async (durationInSeconds, name, symbol) => {
     // Do we should consider different name and symbol?
-    const auctionAddress = await blockchainService.deploy(durationInSeconds, name, symbol)
-
-    await Auction.create({
-        ipfsUrl,
+    const auctionAddress = await blockchainService.deployAuction(durationInSeconds, name, symbol)
+    const endsTime = new Date(Date.now() + durationInSeconds * 1000);
+    console.log(`Deploy succesfull to : ${auctionAddress}`);
+    const newAuction = await Auction.create({
         address: auctionAddress,
+        endsAt: endsTime,
     })
 
-    return {};
+    return { auctionAddress, auctionId: newAuction.id, endsAt: newAuction.endsAt, };
 };
 
 const getAuction = async (filter, options) => {
