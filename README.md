@@ -2,6 +2,26 @@
 
 We are building an auction system where each painting is represented as an NFT and auctioned on the Ethereum blockchain.
 
+## 📚 Table of Contents
+
+1. [Technologies Used](#technologies-used)  
+   - [Smart Contracts](#smart-contracts)  
+   - [Backend & Infrastructure](#backend--infrastructure)  
+2. [Backend Architecture](#backend-architecture)  
+   - [1. API Services](#1-api-services)  
+   - [2. Event Listener](#2-event-listener)  
+   - [3. Message Broker (RabbitMQ)](#3-message-broker-rabbitmq)  
+   - [4. Workers](#4-workers)  
+   - [5. Database (MongoDB)](#5-database-mongodb)  
+3. [Backend Code Layout](#backend-code-layout)  
+4. [API Endpoints](#api-endpoints)  
+   - [Create an Auction](#create-an-auction)  
+   - [Get Bidders in an Auction](#get-bidders-in-an-auction)  
+5. [How to Run](#how-to-run)  
+   - [Run the Backend Server](#1-run-the-backend-server)  
+   - [Place a Bid (Smart Contract)](#2-trying-to-place-a-bid)  
+6. [Improvements](#improvements)
+
 ## Technologies Used
 
 ### Smart Contracts
@@ -47,6 +67,7 @@ MongoDB is used to persist auction metadata, user bids. It acts as the central d
 
 
 ## Backend's layout code
+```bash
 backend/
 ├── config/                 # Configs: env vars, constants, internal logic configs
 │   ├── config.js
@@ -94,4 +115,97 @@ backend/
 │
 └── index.js               # Entry point (e.g., Express/Koa app setup)
 
+```
+## API Endpoints
 
+### Create an auction
+- **Endpoint:** `POST /api/v1/auction`
+- **Description:** Create a new auction.
+
+- **Request Body:**
+  - `durationInSeconds`: The duration (in seconds) until the auction ends.
+  - `name`: The name of the auction.
+  - `symbol`: The symbol representing the auction.
+
+- **Response:**
+  - `200 OK`: Returns the created auction.
+  - `400 Bad Request`: If there is a validation error.
+  - `401 Unauthorized`: If the user is not authenticated.
+
+- **Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auction \
+-H "Content-Type: application/json" \
+-d '{"durationInSeconds": 300, "name": "PaintingNFT", "symbol": "PAINT"}'
+```
+
+
+## Get bidders in an auction
+
+- **Endpoint:** `GET /api/v1/auction/bidders`
+- **Description:** Retrieve all bidders for a specific auction.
+
+- **Query Parameters:**
+  - `auctionId` (required): The ID of the auction.
+  - `limit` (optional): Number of bidders per page.
+  - `page` (optional): Page number for pagination.
+
+- **Response:**
+  - `200 OK`: Returns a paginated list of bidders.
+  - `400 Bad Request`: If `auctionId` is missing or invalid.
+  - `401 Unauthorized`: If the user is not authenticated.
+
+- **Example:**
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/auction/bidders?auctionId=abc123&page=1&limit=10" \
+-H "Content-Type: application/json"
+```
+
+
+## How to Run
+
+### 1. Run the backend server
+
+- Navigate to the `backend` folder:
+  - Create a `.env` file from `.env.sample`
+  - Build and start the services using Docker:
+    ```bash
+    docker buildx build --platform=linux/amd64 -t your-app-name . --no-cache
+    docker compose up --build
+    ```
+
+- 🔗 **API available at**: [http://localhost:3000](http://localhost:3000)  
+- 🐇 **RabbitMQ UI**: [http://localhost:15672](http://localhost:15672)  
+  - Username/Password: `guest` / `guest`  
+- 🗄️ **MongoDB connection**: `mongodb://localhost:27017`
+
+- You can create an auction using the following endpoint:
+  ```http
+  POST /api/v1/auction
+  ```
+
+---
+
+### 2. Trying to place a bid
+
+- Navigate to the `smart-contract` folder:
+
+  - Compile the smart contract:
+    ```bash
+    npx hardhat compile
+    ```
+
+  - Create a `.env` file from `.env.sample`
+
+  - Navigate to the `scripts` folder
+
+  - Try placing a bid using:
+    ```bash
+    npx hardhat run scripts/bid.js --network sepolia
+    ```
+
+# Improvements
+- Implemented authentication for protected routes
+- Investigated canvas library for annotation, but encountered compatibility issues with Docker on macOS

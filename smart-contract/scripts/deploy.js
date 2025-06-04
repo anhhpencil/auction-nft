@@ -1,7 +1,7 @@
 // scripts/deploy.js
 const hre = require("hardhat");
 
-async function main(durationInSeconds = 3600) { // default is 60 minutes
+async function main(durationInSeconds = 300) { // default is 5 minutes
     const PaintingAuction = await hre.ethers.getContractFactory("PaintingAuction");
     const auction = await PaintingAuction.deploy("PaintingNFT", "PAINT", durationInSeconds);
     await auction.waitForDeployment();

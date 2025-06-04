@@ -10,7 +10,7 @@ contract PaintingAuction is ERC721URIStorage, ReentrancyGuard {
     uint public endTime;
     address public winner;
     bool public auctionEnded;
-    bool public nftMinted;
+    bool public nftMinted = false;
 
     uint public tokenId;
 
